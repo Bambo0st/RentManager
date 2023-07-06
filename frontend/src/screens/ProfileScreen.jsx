@@ -1,17 +1,18 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Form, Button, Row, Col } from 'react-bootstrap'
+import { Form, Button, Row } from 'react-bootstrap'
 import FormContainer from '../components/FormContainer'
 import { useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { useRegisterMutation } from '../slices/usersApiSlice'
 
 import { toast } from 'react-toastify'
 
 import Loader from '../components/Loader'
 import { setCredentials } from '../slices/authSlice'
 
-const RegisterScreen = () => {
+import { useUpdateUserMutation } from '../slices/usersApiSlice'
+
+const ProfileScreen = () => {
     const [name, setName] = useState('')
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
@@ -20,13 +21,12 @@ const RegisterScreen = () => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
 
-    const [register, { isLoading }] = useRegisterMutation();
+    const [updateProfile, { isLoading }] = useUpdateUserMutation();
     const { userInfo } = useSelector((state) => state.auth)     //userInfo in authSlice,auth is a state(look at redux dev tools)
     useEffect(() => {           //this is if logged in info is saved then redirect to that site
-        if (userInfo) {
-            navigate('/')
-        }
-    }, [navigate, userInfo]);
+        setName(userInfo.name)
+        setEmail(userInfo.email)
+    }, [userInfo.name, userInfo.email]);
 
 
     const submitHandler = async (e) => {
@@ -36,9 +36,14 @@ const RegisterScreen = () => {
         }
         else {
             try {
-                const res = await register({ name, email, password }).unwrap();
+                const res = await updateProfile({
+                    _id: userInfo._id,
+                    name,
+                    email,
+                    password
+                }).unwrap()
                 dispatch(setCredentials({ ...res }))
-                navigate('/')
+                toast.success('Updated profile Successfully')
             }
             catch (err) {
                 toast.error(err?.data?.message || err.error)
@@ -49,7 +54,7 @@ const RegisterScreen = () => {
 
     return (
         < FormContainer>
-            <h1>Sign Up</h1>
+            <h1>Update Profile</h1>
             <Form onSubmit={submitHandler}>
                 <Form.Group className='my-2' controlId='name'>
                     <Form.Label>Name</Form.Label>
@@ -87,22 +92,14 @@ const RegisterScreen = () => {
                         }}>
                     </Form.Control>
                 </Form.Group>
-                {isLoading && <Loader />}
                 <Row>
                     <Button type='submit' variant='primary' className='mx-auto mt-3' style={{ width: '200px' }}>
-                        Sign Up
+                        Update
                     </Button>
-                </Row>
-
-
-                <Row className='py-3'>
-                    <Col style={{ textAlign: 'center' }}>
-                        Already have an account?<Link to='/login'>Log-in</Link>
-                    </Col>
                 </Row>
             </Form >
         </FormContainer >
     )
 }
 
-export default RegisterScreen;
+export default ProfileScreen;
